@@ -9,6 +9,7 @@ class Exchange:
             self,
             key=None,
             secret=None,
+            pass_phrase=None,
             base_url=None,
             timeout=None,
             proxies=None,
@@ -17,6 +18,7 @@ class Exchange:
     ):
         self.key = key
         self.secret = secret
+        self.pass_phrase = pass_phrase
         self.timeout = timeout
         self.show_limit_usage = False
         self.show_header = False

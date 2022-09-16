@@ -1,9 +1,10 @@
 import hmac
 import hashlib
 import logging
+import pandas as pd
+
 from base import utils
 from base.exchange import Exchange
-import pandas as pd
 
 
 class Binance(Exchange):

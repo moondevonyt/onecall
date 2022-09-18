@@ -46,8 +46,7 @@ class Exchange:
             self._handle_exception(response)
             return response.json()
         except Exception as e:
-            self._logger.error(e)
-            return str(e)
+            return self._send_error_response(e)
 
     def _dispatch_request(self, http_method):
         return {
@@ -68,3 +67,6 @@ class Exchange:
                 raise ClientException(response.text)
             raise ClientException(response.text)
         raise ServerException(response.text)
+
+    def _send_error_response(self, e: Exception):
+        return {"error": e.args}

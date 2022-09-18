@@ -1,6 +1,5 @@
 import requests
 import logging
-import datetime
 
 
 class Exchange:
@@ -19,10 +18,7 @@ class Exchange:
         self.key = key
         self.secret = secret
         self.pass_phrase = pass_phrase
-        self.timeout = timeout
         self.show_limit_usage = False
-        self.show_header = False
-        self.proxies = None
         self.session = requests.Session()
 
         if base_url:
@@ -30,12 +26,6 @@ class Exchange:
 
         if show_limit_usage is True:
             self.show_limit_usage = True
-
-        if show_header is True:
-            self.show_header = True
-
-        if type(proxies) is dict:
-            self.proxies = proxies
 
         self._logger = logging.getLogger(__name__)
         return
@@ -55,10 +45,10 @@ class Exchange:
         try:
             return response.json()
         except requests.exceptions.Timeout:
-            logging.error("API timeout error")
+            self._logger.error(requests.exceptions.Timeout)
         except requests.exceptions.RequestException:
-            logging.error("something went wrong")
-        return None
+            self._logger.error(requests.exceptions.RequestException)
+        return response.text
 
     def _dispatch_request(self, http_method):
         return {

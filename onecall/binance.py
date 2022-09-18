@@ -3,7 +3,6 @@ import hmac
 import hashlib
 import logging
 import pandas as pd
-from ratelimiter import RateLimiter
 from urllib.parse import urlencode
 
 from base import utils
@@ -12,11 +11,19 @@ from base import urls
 
 
 class Binance(Exchange):
-
-    def __init__(self, key=None, secret=None, **kwargs):
+    """
+    Binance API class
+    :param key: api key
+    :param secret: secret key
+    Keyword Args:
+        spot (boolean, optional): switch to sport market
+        test (boolean, optional): switch to test env
+        show_limit_usage (bool, optional): whether return limit usage(requests and/or orders). By default, it's False
+    """
+    def __init__(self, key=None, secret=None, test=False, **kwargs):
         self._path_config = {
             "get_positions": {"method": "GET", "path": "/fapi/v2/positionRisk", "rate_limit": 50},
-            "cancel_order": {"method": "DELETE", "path": "/fapi/v1/batchOrders", "rate_limit": 50},
+            "cancel_orders": {"method": "DELETE", "path": "/fapi/v1/allOpenOrders", "rate_limit": 50},
             "get_data": {"method": "GET", "path": "/fapi/v1/klines", "rate_limit": 50},
             "get_orderbook": {"method": "GET", "path": "/fapi/v1/depth", "rate_limit": 50},
             "get_balance": {"method": "GET", "path": "/fapi/v2/balance", "rate_limit": 50},
@@ -25,14 +32,37 @@ class Binance(Exchange):
             "get_closed_orders": {"method": "GET", "path": "/fapi/v1/allOrders", "rate_limit": 50},
             "get_open_orders": {"method": "GET", "path": "/fapi/v1/openOrders", "rate_limit": 50}
         }
-        self.LIMIT = 500
+        self._LIMIT = 500
 
-        if "base_url" not in kwargs:
+        # Constants for Order side
+        self.BUY_SIDE = 'BUY'
+        self.SELL_SIDE = 'SELL'
+
+        # binance interval
+        self.INTERVAL_1m = '1m'
+        self.INTERVAL_3m = '3m'
+        self.INTERVAL_5m = '5m'
+        self.INTERVAL_15m = '15m'
+        self.INTERVAL_30m = '30m'
+        self.INTERVAL_1H = '1h'
+        self.INTERVAL_2H = '2h'
+        self.INTERVAL_4H = '4h'
+        self.INTERVAL_6H = '6h'
+        self.INTERVAL_8H = '8h'
+        self.INTERVAL_12H = '12h'
+        self.INTERVAL_1D = '1d'
+        self.INTERVAL_3D = '3d'
+        self.INTERVAL_1W = '1w'
+        self.INTERVAL_1M = '1M'
+
+
+        if not test:
             kwargs["base_url"] = urls.BINANCE_FUT_BASE_URL
-
+        else:
+            kwargs["base_url"] = urls.BINANCE_FUT_TEST_BASE_URL
         super().__init__(key, secret, **kwargs)
+        return
 
-    @RateLimiter(max_calls=50, period=1)
     def get_positions(self, symbol: str):
         """
         API to get current positions
@@ -66,7 +96,6 @@ class Binance(Exchange):
                                         params)
         return response
 
-    @RateLimiter(max_calls=50, period=1)
     def cancel_orders(self, symbol: str):
         """
         API to cancel all the active orders
@@ -111,34 +140,34 @@ class Binance(Exchange):
                                         params)
         return response
 
-    @RateLimiter(max_calls=50, period=1)
     def get_data(self, symbol: str, interval: int, **kwargs):
         """
         API to get OHLCV data
         :param symbol: future symbol
         :param interval: time interval
-        :param start_date: start time of the data
-        :param end_date: end time of the data
-        :param limit: number of data limit
-        :param is_dataframe: convert the data to pandas dataframe
+        Keyword Args:
+            start_date: start time of the data
+            end_date: end time of the data
+            limit: number of data limit
+            s_dataframe: convert the data to pandas dataframe
         :return: list of list/ pandas dataframe
         """
         params = {
             "symbol": symbol,
             "interval": interval,
             "timestamp": utils.get_current_timestamp(),
-            "limit": kwargs["limit"] if kwargs["limit"] else self.LIMIT,
+            "limit": kwargs.get("limit") if kwargs.get("limit", None) else self._LIMIT,
         }
-        if kwargs["start_date"]:
+        if kwargs.get("start_date"):
             params["startTime"] = int(kwargs["start_date"] * 1000)
-        if kwargs["end_date"]:
+        if kwargs.get("end_date"):
             params["endTime"] = int(kwargs["end_date"] * 1000)
 
         headers = {"X-MBX-APIKEY": self.key}
         response = self.send_request(self._path_config.get("get_data").get("method"),
                                      self._path_config.get("get_data").get("path"),
-                                     headers,params)
-        if kwargs["is_dataframe"]:
+                                     headers, params)
+        if kwargs.get("is_dataframe"):
             try:
                 columns = ['Open Time', 'Open', 'High', 'Low', 'Close', 'Volume', 'Close time',
                            'Quote asset volume', 'Number of trades', 'Taker buy base asset volume',
@@ -148,13 +177,13 @@ class Binance(Exchange):
                 logging.error("failed to create dataframe")
         return response
 
-    @RateLimiter(max_calls=50, period=1)
     def get_orderbook(self, symbol: str, **kwargs):
         """
         Get orderbook
         :param symbol: future symbol
-        :param limit: result limit
-        :param is_dataframe: convert the data to pandas dataframe
+        Keyword Args:
+            limit: result limit
+            is_dataframe: convert the data to pandas dataframe
         :return: {
               "lastUpdateId": 1027024,
               "E": 1589436922972,   // Message output time
@@ -175,13 +204,13 @@ class Binance(Exchange):
         """
         params = {
             "symbol": symbol,
-            "limit": kwargs["limit"] if kwargs["limit"] else self.LIMIT
+            "limit": kwargs.get("limit") if kwargs.get("limit") else self._LIMIT
         }
         header = {"X-MBX-APIKEY": self.key}
         response = super().send_request(self._path_config.get("get_orderbook").get("method"),
                                         self._path_config.get("get_orderbook").get("path"),
                                         header, params=params)
-        if kwargs["is_dataframe"]:
+        if kwargs.get("is_dataframe"):
             try:
                 columns = ['price', 'QTY']
                 df = pd.DataFrame(response["bids"], columns=columns)
@@ -191,7 +220,6 @@ class Binance(Exchange):
                 logging.error("failed to create dataframe")
         return response
 
-    @RateLimiter(max_calls=50, period=1)
     def get_balance(self):
         """
         API to get future account balance
@@ -217,8 +245,7 @@ class Binance(Exchange):
                                         params)
         return response
 
-    @RateLimiter(max_calls=50, period=1)
-    def market_order(self, symbol: str, side: str, quantity: int):
+    def market_order(self, symbol: str, side: str, quantity: float):
         """
         API to place market order
         :param symbol: future symbol
@@ -262,8 +289,7 @@ class Binance(Exchange):
                                         params)
         return response
 
-    @RateLimiter(max_calls=50, period=1)
-    def limit_order(self, symbol: str, side: str, quantity: int, price: float, time_in_force="GTC"):
+    def limit_order(self, symbol: str, side: str, quantity: float, price: float, time_in_force="GTC"):
         """
         API to place limit order
         :param symbol: future symbol
@@ -311,7 +337,6 @@ class Binance(Exchange):
                                         params)
         return response
 
-    @RateLimiter(max_calls=50, period=1)
     def get_closed_orders(self, symbol: str):
         """
         API to get all the closed orders
@@ -353,7 +378,6 @@ class Binance(Exchange):
                                         params)
         return list(filter(lambda order: order["status"] == "FILLED", response))
 
-    @RateLimiter(max_calls=50, period=1)
     def get_open_orders(self, symbol: str):
         """
         API to get all active orders

@@ -20,7 +20,7 @@ class Binance(Exchange):
         test (boolean, optional): switch to test env
         show_limit_usage (bool, optional): whether return limit usage(requests and/or orders). By default, it's False
     """
-    def __init__(self, key=None, secret=None, test=False, **kwargs):
+    def __init__(self, key=None, secret=None, debug=False, **kwargs):
         self._path_config = {
             "get_positions": {"method": "GET", "path": "/fapi/v2/positionRisk", "rate_limit": 50},
             "cancel_orders": {"method": "DELETE", "path": "/fapi/v1/allOpenOrders", "rate_limit": 50},
@@ -55,7 +55,7 @@ class Binance(Exchange):
         self.INTERVAL_1W = '1w'
         self.INTERVAL_1M = '1M'
 
-        if not test:
+        if not debug:
             kwargs["base_url"] = urls.BINANCE_FUT_BASE_URL
         else:
             kwargs["base_url"] = urls.BINANCE_FUT_TEST_BASE_URL

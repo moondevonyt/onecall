@@ -43,12 +43,13 @@ class Exchange:
     def send_request(self, http_method, url_path, header=None, params=None, data=None):
         url = self.base_url + url_path
         self._logger.debug("url: " + url)
-        response = self._dispatch_request(http_method)(
-            url=url,
-            header=header,
-            params=params,
-            data=data
-        )
+        payload = {
+            "url": url,
+            "headers": header,
+            "params": params,
+            "data": data
+        }
+        response = self._dispatch_request(http_method)(**payload)
         self._logger.debug("raw response from server:" + response.text)
 
         try:

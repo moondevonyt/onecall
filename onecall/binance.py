@@ -1,35 +1,22 @@
 import datetime
-import hmac
-import hashlib
 import logging
 import pandas as pd
-from ratelimiter import RateLimiter
 
 from base import utils
 from base.exchange import Exchange
-from base import urls
+from binance import um_futures, cm_futures
 
 
 class Binance(Exchange):
 
-    def __init__(self, key=None, secret=None, **kwargs):
-        self._path_config = {
-            "get_position": {"method": "GET", "path": "/fapi/v2/positionRisk", "rate_limit": 50},
-            "cancel_order": {"method": "DELETE", "path": "/fapi/v1/batchOrders", "rate_limit": 50},
-            "get_data": {"method": "GET", "path": "/fapi/v1/klines", "rate_limit": 50},
-            "get_orderbook": {"method": "GET", "path": "/fapi/v1/depth", "rate_limit": 50},
-            "get_balance": {"method": "GET", "path": "/fapi/v2/balance", "rate_limit": 50},
-            "market_order": {"method": "POST", "path": "/fapi/v1/order", "rate_limit": 50},
-            "limit_order": {"method": "POST", "path": "/fapi/v1/order", "rate_limit": 50},
-            "get_closed_orders": {"method": "GET", "path": "/fapi/v1/allOrders", "rate_limit": 50},
-            "get_open_orders": {"method": "GET", "path": "/fapi/v1/openOrders", "rate_limit": 50}
-        }
-        if "base_url" not in kwargs:
-            kwargs["base_url"] = urls.BINANCE_FUT_BASE_URL
+    def __init__(self, key=None, secret=None, future_type=None):
+        # For coin future
+        if future_type == "COIN":
+            self._client = cm_futures.CMFutures(key=key, secret=secret)
+        else:
+            # For USD future
+            self._client = um_futures.UMFutures(key=key, secret=secret)
 
-        super().__init__(key, secret, **kwargs)
-
-    @RateLimiter(max_calls=50, period=1)
     def get_positions(self, symbol: str):
         """
         API to get current positions
@@ -54,16 +41,8 @@ class Binance(Exchange):
             }
         ]
         """
-        params = {
-            "symbol": symbol,
-            "timestamp": utils.get_current_timestamp()
-        }
-        response, error = self._signed_request(self._path_config.get("get_positions").get("method"),
-                                               self._path_config.get("get_positions").get("path"),
-                                               params)
-        return response
+        return self._client.get_position_risk(symbol=symbol)
 
-    @RateLimiter(max_calls=50, period=1)
     def cancel_orders(self, symbol: str):
         """
         API to cancel all the active orders
@@ -99,17 +78,9 @@ class Binance(Exchange):
             }
         ]
         """
-        params = {
-            "symbol": symbol,
-            "timestamp": utils.get_current_timestamp()
-        }
-        response = self._signed_request(self._path_config.get("cancel_orders").get("method"),
-                                        self._path_config.get("cancel_orders").get("path"),
-                                        params)
-        return response
+        return self._client.cancel_batch_order(symbol=symbol)
 
-    @RateLimiter(max_calls=50, period=1)
-    def get_data(self, symbol: str, interval: int, st_date: datetime.datetime, ed_date: datetime.datetime,
+    def get_data(self, symbol: str, interval: int, st_date: datetime.datetime = None, ed_date: datetime.datetime = None,
                  limit=500, is_dataframe=False):
         """
         API to get OHLCV data
@@ -124,31 +95,29 @@ class Binance(Exchange):
         params = {
             "symbol": symbol,
             "interval": interval,
-            "timestamp": utils.get_current_timestamp(),
             "limit": limit,
-            "startTime": int(st_date.timestamp() * 1000),
-            "endTime": int(ed_date.timestamp() * 1000)
         }
-        header = {"X-MBX-APIKEY": self.key}
-        response = self.send_request(self._path_config.get("get_data").get("method"),
-                                     self._path_config.get("get_data").get("path"),
-                                     header, params=params)
+        if st_date:
+            params["startTime"] = st_date
+
+        if ed_date:
+            params["endTime"] = ed_date
+        response = self._client.klines(**params)
         if is_dataframe:
             try:
                 columns = ['Open Time', 'Open', 'High', 'Low', 'Close', 'Volume', 'Close time',
                            'Quote asset volume', 'Number of trades', 'Taker buy base asset volume',
-                           'Taker buy quote asset volume']
+                           'Taker buy quote asset volume', 'ignore']
                 return pd.DataFrame(response, columns=columns)
             except :
                 logging.error("failed to create dataframe")
         return response
 
-    @RateLimiter(max_calls=50, period=1)
     def get_orderbook(self, symbol: str, limit=500, is_dataframe=False):
         """
         Get orderbook
         :param symbol: future symbol
-        :param limit: result limit
+        :param limit: result limit; default 500
         :param is_dataframe: convert the data to pandas dataframe
         :return: {
               "lastUpdateId": 1027024,
@@ -172,10 +141,7 @@ class Binance(Exchange):
             "symbol": symbol,
             "limit": limit
         }
-        header = {"X-MBX-APIKEY": self.key}
-        response = super().send_request(self._path_config.get("get_orderbook").get("method"),
-                                        self._path_config.get("get_orderbook").get("path"),
-                                        header, params=params)
+        response = self._client.depth(**params)
         if is_dataframe:
             try:
                 columns = ['price', 'QTY']
@@ -186,7 +152,6 @@ class Binance(Exchange):
                 logging.error("failed to create dataframe")
         return response
 
-    @RateLimiter(max_calls=50, period=1)
     def get_balance(self):
         """
         API to get future account balance
@@ -204,15 +169,8 @@ class Binance(Exchange):
                     }
                 ]
         """
-        params = {
-            "timestamp": utils.get_current_timestamp()
-        }
-        response = self._signed_request(self._path_config.get("get_balance").get("method"),
-                                        self._path_config.get("get_balance").get("path"),
-                                        params)
-        return response
+        return self._client.balance()
 
-    @RateLimiter(max_calls=50, period=1)
     def market_order(self, symbol: str, side: str, quantity: int):
         """
         API to place market order
@@ -250,14 +208,9 @@ class Binance(Exchange):
             "side": side.upper(),
             "type": "MARKET",
             "quantity": quantity,
-            "timestamp": utils.get_current_timestamp()
         }
-        response = self._signed_request(self._path_config.get("market_order").get("method"),
-                                        self._path_config.get("market_order").get("path"),
-                                        params)
-        return response
+        return self._client.new_order(**params)
 
-    @RateLimiter(max_calls=50, period=1)
     def limit_order(self, symbol: str, side: str, quantity: int, price: float, time_in_force="GTC"):
         """
         API to place limit order
@@ -301,12 +254,8 @@ class Binance(Exchange):
             "timeInForce": time_in_force,
             "timestamp": utils.get_current_timestamp()
         }
-        response = self._signed_request(self._path_config.get("limit_order").get("method"),
-                                        self._path_config.get("limit_order").get("path"),
-                                        params)
-        return response
+        return self._client.new_order(**params)
 
-    @RateLimiter(max_calls=50, period=1)
     def get_closed_orders(self, symbol: str):
         """
         API to get all the closed orders
@@ -340,15 +289,11 @@ class Binance(Exchange):
             ]
         """
         params = {
-            "symbol": symbol,
-            "timestamp": utils.get_current_timestamp()
+            "symbol": symbol
         }
-        response = self._signed_request(self._path_config.get("get_closed_orders").get("method"),
-                                        self._path_config.get("get_closed_orders").get("path"),
-                                        params)
+        response = self._client.get_all_orders(**params)
         return list(filter(lambda order: order["status"] == "FILLED", response))
 
-    @RateLimiter(max_calls=50, period=1)
     def get_open_orders(self, symbol: str):
         """
         API to get all active orders
@@ -382,24 +327,6 @@ class Binance(Exchange):
             ]
         """
         params = {
-            "symbol": symbol,
-            "timestamp": utils.get_current_timestamp()
+            "symbol": symbol
         }
-        response = self._signed_request(self._path_config.get("get_open_orders").get("method"),
-                                        self._path_config.get("get_open_orders").get("path"),
-                                        params)
-        return response
-
-    def _signed_request(self, method, url, params):
-        header, singed_params = self._get_request_credentials(params)
-        response = self.send_request(method, url, header, singed_params)
-        return response
-
-    def _get_sign(self, data):
-        m = hmac.new(self.secret.encode("utf-8"), str(data).encode("utf-8"), hashlib.sha256)
-        return m.hexdigest()
-
-    def _get_request_credentials(self, params):
-        header = {"X-MBX-APIKEY": self.key}
-        singed_params = {**params, "signature": self._get_sign(params)}
-        return header, singed_params
+        return self._client.get_open_orders(**params)

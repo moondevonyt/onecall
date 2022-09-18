@@ -5,6 +5,7 @@ import pandas as pd
 
 from base import utils
 from base.exchange import Exchange
+from base import urls
 
 
 
@@ -12,7 +13,7 @@ class Phemex(Exchange):
 
     def __init__(self, key=None, secret=None, **kwargs):
         if "base_url" not in kwargs:
-            kwargs["base_url"] = "https://api.phemex.com"
+            kwargs["base_url"] = urls.PHEMEX_FUT_BASE_URL
 
         super().__init__(key, secret, **kwargs)
 

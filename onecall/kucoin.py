@@ -6,13 +6,17 @@ import base64
 
 from base import utils
 from base.exchange import Exchange
+from base import urls
 
 
 class Kucoin(Exchange):
 
     def __init__(self, key=None, secret=None, **kwargs):
+        self._path_config = {
+            "positions": {"path": "/api/v1/position", "rate": 10}
+        }
         if "base_url" not in kwargs:
-            kwargs["base_url"] = "https://api-futures.kucoin.com"
+            kwargs["base_url"] = urls.KUCOIN_FUT_BASE_URL
 
         super().__init__(key, secret, **kwargs)
 

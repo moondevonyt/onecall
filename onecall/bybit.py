@@ -5,6 +5,7 @@ import pandas as pd
 
 from base import utils
 from base.exchange import Exchange
+from base import urls
 
 
 class Bybit(Exchange):
@@ -12,7 +13,7 @@ class Bybit(Exchange):
     def __init__(self, key=None, secret=None, **kwargs):
         self.recv_window = "5000"
         if "base_url" not in kwargs:
-            kwargs["base_url"] = "https://api.bybit.com"
+            kwargs["base_url"] = urls.BYBIT_FUT_BASE_URL
 
         super().__init__(key, secret, **kwargs)
 

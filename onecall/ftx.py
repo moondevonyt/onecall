@@ -6,13 +6,14 @@ import time
 
 from base import utils
 from base.exchange import Exchange
+from base import urls
 
 
 class FTX(Exchange):
 
     def __init__(self, key=None, secret=None, **kwargs):
         if "base_url" not in kwargs:
-            kwargs["base_url"] = "https://ftx.com/api"
+            kwargs["base_url"] = urls.FTX_FUT_BASE_URL
 
         super().__init__(key, secret, **kwargs)
 

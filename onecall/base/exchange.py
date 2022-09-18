@@ -3,8 +3,9 @@ import requests
 import logging
 import json
 
+from .exceptions import ClientException, ServerException
 
-from exceptions import ClientException, ServerException
+
 class Exchange:
 
     def __init__(
@@ -31,25 +32,22 @@ class Exchange:
         return
 
     def send_request(self, http_method, url_path, header=None, params=None, data=None):
-        url = self.base_url + url_path
-        self._logger.debug("url: " + url)
-        payload = {
-            "url": url,
-            "headers": header,
-            "params": params,
-            "data": data
-        }
-        response = self._dispatch_request(http_method)(**payload)
-        self._logger.debug("raw response from server:" + response.text)
-        self._handle_exception(response)
-
         try:
+            url = self.base_url + url_path
+            self._logger.debug("url: " + url)
+            payload = {
+                "url": url,
+                "headers": header,
+                "params": params,
+                "data": data
+            }
+            response = self._dispatch_request(http_method)(**payload)
+            self._logger.debug("raw response from server:" + response.text)
+            self._handle_exception(response)
             return response.json()
-        except requests.exceptions.Timeout:
-            self._logger.error(requests.exceptions.Timeout)
-        except requests.exceptions.RequestException:
-            self._logger.error(requests.exceptions.RequestException)
-        return response.text
+        except Exception as e:
+            self._logger.error(e)
+            return str(e)
 
     def _dispatch_request(self, http_method):
         return {

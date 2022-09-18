@@ -55,7 +55,6 @@ class Binance(Exchange):
         self.INTERVAL_1W = '1w'
         self.INTERVAL_1M = '1M'
 
-
         if not test:
             kwargs["base_url"] = urls.BINANCE_FUT_BASE_URL
         else:
@@ -173,7 +172,7 @@ class Binance(Exchange):
                            'Quote asset volume', 'Number of trades', 'Taker buy base asset volume',
                            'Taker buy quote asset volume', 'ignore']
                 return pd.DataFrame(response, columns=columns)
-            except :
+            except Exception as e:
                 logging.error("failed to create dataframe")
         return response
 
@@ -216,7 +215,7 @@ class Binance(Exchange):
                 df = pd.DataFrame(response["bids"], columns=columns)
                 orderbook = df.append(pd.DataFrame(response["asks"], columns=columns), ignore_index=True)
                 return orderbook
-            except:
+            except Exception as e:
                 logging.error("failed to create dataframe")
         return response
 

@@ -16,9 +16,9 @@ class Binance(Exchange):
     :param key: api key
     :param secret: secret key
     Keyword Args:
-        spot (boolean, optional): switch to sport market
-        test (boolean, optional): switch to test env
-        show_limit_usage (bool, optional): whether return limit usage(requests and/or orders). By default, it's False
+        :keyword spot (boolean, optional): switch to sport market
+        :keyword debug (boolean, optional): switch to test env
+        :keyword show_limit_usage (bool, optional): whether return limit usage(requests and/or orders). By default, it's False
     """
     def __init__(self, key=None, secret=None, debug=False, **kwargs):
         self._path_config = {

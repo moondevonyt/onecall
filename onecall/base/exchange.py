@@ -1,7 +1,10 @@
+from json import JSONDecodeError
 import requests
 import logging
+import json
 
 
+from exceptions import ClientException, ServerException
 class Exchange:
 
     def __init__(
@@ -10,10 +13,7 @@ class Exchange:
             secret=None,
             pass_phrase=None,
             base_url=None,
-            timeout=None,
-            proxies=None,
             show_limit_usage=False,
-            show_header=False,
     ):
         self.key = key
         self.secret = secret
@@ -41,6 +41,7 @@ class Exchange:
         }
         response = self._dispatch_request(http_method)(**payload)
         self._logger.debug("raw response from server:" + response.text)
+        self._handle_exception(response)
 
         try:
             return response.json()
@@ -57,3 +58,15 @@ class Exchange:
             "PUT": self.session.put,
             "POST": self.session.post,
         }.get(http_method, "GET")
+
+    def _handle_exception(self, response):
+        status_code = response.status_code
+        if status_code < 400:
+            return
+        if 400 <= status_code < 500:
+            try:
+                err = json.loads(response.text)
+            except JSONDecodeError:
+                raise ClientException(response.text)
+            raise ClientException(response.text)
+        raise ServerException(response.text)

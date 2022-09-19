@@ -144,11 +144,10 @@ class Binance(Exchange):
         API to get OHLCV data
         :param symbol: future symbol
         :param interval: time interval
-        Keyword Args:
-            start_date: start time of the data
-            end_date: end time of the data
-            limit: number of data limit
-            s_dataframe: convert the data to pandas dataframe
+        :keyword start_date: start time of the data
+        :keyword end_date: end time of the data
+        :keyword limit: number of data limit
+        :keyword is_dataframe: convert the data to pandas dataframe
         :return: list of list/ pandas dataframe
         """
         params = {
@@ -375,7 +374,9 @@ class Binance(Exchange):
         response = self._signed_request(self._path_config.get("get_closed_orders").get("method"),
                                         self._path_config.get("get_closed_orders").get("path"),
                                         params)
-        return list(filter(lambda order: order["status"] == "FILLED", response))
+        if type(response) == list:
+            return list(filter(lambda order: order["status"] == "FILLED", response))
+        return response
 
     def get_open_orders(self, symbol: str):
         """

@@ -1,7 +1,8 @@
 import hmac
 import hashlib
+import json
 import logging
-import time
+import uuid
 
 import pandas as pd
 from urllib.parse import urlencode
@@ -14,10 +15,41 @@ from base import urls
 class Phemex(Exchange):
     """
     Phemex API class
-
-
     """
+    # Interval constants
+    MINUTE_1 = 60
+    MINUTE_5 = 300
+    MINUTE_15 = 900
+    MINUTE_30 = 1800
+    HOUR_1 = 3600
+    HOUR_4 = 14400
+    DAY_1 = 86400
+    WEEK_1 = 604800
+    MONTH_1 = 2592000
+    SEASON_1 = 7776000
+    YEAR_1 = 31104000
+
+    # Limit constants
+    LIMIT_5 = 5
+    LIMIT_10 = 10
+    LIMIT_50 = 50
+    LIMIT_100 = 100
+    LIMIT_500 = 500
+    LIMIT_1000 = 1000
+
+    _LIMIT = 500
+
+    # Constants for Order side
+    BUY_SIDE = 'Buy'
+    SELL_SIDE = 'Sell'
+
     def __init__(self, key=None, secret=None, debug=False, **kwargs):
+        """
+        Phemex API class
+        :param key: key
+        :param secret: secret key
+        :param debug: connect to testnet
+        """
         self._path_config = {
             "get_positions": {"method": "GET", "path": "/accounts/accountPositions", "rate_limit": 50},
             "cancel_orders": {"method": "DELETE", "path": "/orders/all", "rate_limit": 50},
@@ -29,12 +61,6 @@ class Phemex(Exchange):
             "get_closed_orders": {"method": "GET", "path": "/exchange/order/list", "rate_limit": 50},
             "get_open_orders": {"method": "GET", "path": "/orders/activeList", "rate_limit": 50}
         }
-
-        self._LIMIT = 500
-
-        # Constants for Order side
-        self.BUY_SIDE = 'BUY'
-        self.SELL_SIDE = 'SELL'
 
         if not debug:
             kwargs["base_url"] = urls.PHEMEX_FUT_BASE_URL
@@ -82,7 +108,11 @@ class Phemex(Exchange):
         response = self._signed_request(self._path_config.get("get_positions").get("method"),
                                         self._path_config.get("get_positions").get("path"),
                                         params)
-        return response.get("data", {}).get("positions")
+        if response.get("data", None):
+            return response.get("data", {}).get("positions")
+        else:
+            self._logger.error(response)
+            return response
 
     def cancel_orders(self, symbol: str):
         """
@@ -100,12 +130,14 @@ class Phemex(Exchange):
                                         params)
         return response
 
-    def get_data(self, symbol: str, is_dataframe=False):
+    def get_data(self, symbol: str, interval: int, **kwargs):
         """
         API to get OHLCV data
 
         :param symbol: future symbol
-        :param is_dataframe: whether to return row json/dataframe
+        :param interval: interval
+        :keyword limit: data limit
+        :keyword is_dataframe: convert the data to pandas dataframe
         :return: {
             "code": 0,
             "msg": "OK",
@@ -118,15 +150,17 @@ class Phemex(Exchange):
             }
         """
         params = {
-            "symbol": symbol
+            "symbol": symbol,
+            "resolution": interval,
+            **kwargs
         }
         response = self._signed_request(self._path_config.get("get_data").get("method"),
                                         self._path_config.get("get_data").get("path"),
                                         params)
-        if is_dataframe:
+        if kwargs.get("is_dataframe", None):
             try:
                 columns = ["timestamp", "interval", "last_close", "open", "high", "low", "close", "volume", "turnover"]
-                return pd.DataFrame(response["rows"], columns=columns)
+                return pd.DataFrame(response["data"]["rows"], columns=columns)
             except Exception as e:
                 self._logger.error(e)
         return response
@@ -194,13 +228,14 @@ class Phemex(Exchange):
         response = self._signed_request(self._path_config.get("get_balance").get("method"),
                                         self._path_config.get("get_balance").get("path"),
                                         params)
-        return response.get("data", {}).get("account")
+        if response.get("data"):
+            return response.get("data", {}).get("account")
+        return response
 
-    def market_order(self, client_order_id: str, symbol: str, side: str, order_qty: float, **kwargs):
+    def market_order(self, symbol: str, side: str, order_qty: float, **kwargs):
         """
         API to place market order
 
-        :param client_order_id: client order id
         :param symbol: coin symbol
         :param side: BUY/SELL
         :param order_qty: order quantity
@@ -241,7 +276,7 @@ class Phemex(Exchange):
             }
         """
         payload = {
-            "clOrdID": client_order_id,
+            "clOrdID": str(uuid.uuid1()),
             "symbol": symbol,
             "side": side,
             "ordType": "Market",
@@ -253,11 +288,10 @@ class Phemex(Exchange):
                                         data=payload)
         return response
 
-    def limit_order(self, client_order_id: str, symbol: str, side: str, order_qty: str, price: float, **kwargs):
+    def limit_order(self, symbol: str, side: str, order_qty: int, price: float, **kwargs):
         """
         API to place limit order
 
-        :param client_order_id: client order id
         :param symbol: currency symbol
         :param side: BUY/SELL
         :param order_qty: order quantity
@@ -299,7 +333,7 @@ class Phemex(Exchange):
             }
         """
         payload = {
-            "clOrdID": client_order_id,
+            "clOrdID": str(uuid.uuid1()),
             "symbol": symbol,
             "side": side,
             "ordType": "Limit",
@@ -399,7 +433,7 @@ class Phemex(Exchange):
             }
         """
         params = {
-            "symbol": symbol
+            "symbol": symbol,
         }
         response = self._signed_request(self._path_config.get("get_open_orders").get("method"),
                                         self._path_config.get("get_open_orders").get("path"),
@@ -408,23 +442,29 @@ class Phemex(Exchange):
 
     def _signed_request(self, method, path, params=None, data=None):
         expiry = utils.get_current_timestamp() + 1
-        header = self._get_request_credentials(path, expiry, params=params, payload=data)
-        response = super().send_request(self, method, path, header, urlencode(params), data)
+        query_params = urlencode(params) if params else None
+        if data:
+            data = json.dumps(data, separators=(',', ':')) if data else None
+        header = self._get_request_credentials(path, expiry, params=query_params, payload=data)
+        if data:
+            data = data.encode()
+        response = self.send_request(method, path, header, query_params, data)
         return response
 
     def _get_sign(self, data):
-        m = hmac.new(super().secret.encode("utf-8"), data.encode("utf-8"), hashlib.sha256)
+        m = hmac.new(self.secret.encode("utf-8"), data.encode("utf-8"), hashlib.sha256)
         return m.hexdigest()
 
     def _get_request_credentials(self, path, expiry, **kwargs):
         signature = ""
         if kwargs.get("params"):
-            signature = self._get_sign(path + urlencode(kwargs.get("params")) + str(expiry))
+            signature = self._get_sign(path + kwargs.get("params") + str(expiry))
         elif kwargs.get("payload"):
-            signature = self._get_sign(path + str(expiry) + str(kwargs.get("payload")))
+            signature = self._get_sign(path + str(expiry) + kwargs.get("payload"))
         header = {
             "x-phemex-access-token": self.key,
             "x-phemex-request-signature": signature,
-            "x-phemex-request-expiry": expiry,
+            "x-phemex-request-expiry": str(expiry),
+            "Content-Type": "application/json"
         }
         return header

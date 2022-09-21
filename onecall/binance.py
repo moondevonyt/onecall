@@ -13,12 +13,6 @@ from base import urls
 class Binance(Exchange):
     """
     Binance API class
-    :param key: api key
-    :param secret: secret key
-    Keyword Args:
-        :keyword spot (boolean, optional): switch to sport market
-        :keyword debug (boolean, optional): switch to test env
-        :keyword show_limit_usage (bool, optional): whether return limit usage(requests and/or orders). By default, it's False
     """
     def __init__(self, key=None, secret=None, debug=False, **kwargs):
         self._path_config = {
@@ -172,7 +166,7 @@ class Binance(Exchange):
                            'Taker buy quote asset volume', 'ignore']
                 return pd.DataFrame(response, columns=columns)
             except Exception as e:
-                logging.error("failed to create dataframe")
+                logging.error("failed to create dataframe: ", e)
         return response
 
     def get_orderbook(self, symbol: str, **kwargs):
@@ -215,12 +209,13 @@ class Binance(Exchange):
                 orderbook = df.append(pd.DataFrame(response["asks"], columns=columns), ignore_index=True)
                 return orderbook
             except Exception as e:
-                logging.error("failed to create dataframe")
+                logging.error("failed to create dataframe: ", e)
         return response
 
     def get_balance(self):
         """
         API to get future account balance
+
         :return: [
                     {
                         "accountAlias": "SgsR",    // unique account code

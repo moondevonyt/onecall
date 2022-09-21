@@ -1,5 +1,5 @@
-from datetime import datetime
+import time
 
 
 def get_current_timestamp():
-    return int(datetime.now().timestamp()*1000)
+    return int(time.time() * 1000)

@@ -14,17 +14,33 @@ from base import urls
 
 class Kucoin(Exchange):
 
+    # interval
+    INTERVAL_1 = 15
+    INTERVAL_15 = 15
+    INTERVAL_30 = 30
+    INTERVAL_60 = 60
+    INTERVAL_120 = 120
+    INTERVAL_240 = 240
+    INTERVAL_480 = 480
+    INTERVAL_720 = 720
+    INTERVAL_1440 = 1440
+    INTERVAL_10080 = 10080
+
+    # Constants for Order side
+    BUY_SIDE = "buy"
+    SELL_SIDE = "sell"
+
     def __init__(self, key=None, secret=None, passphrase=None, debug=False, **kwargs):
         self._path_config = {
-            "get_positions": {"method": "GET", "path": "/api/v2/symbol-position", "rate_limit": 50},
-            "cancel_orders": {"method": "DELETE", "path": "/api/v2/orders", "rate_limit": 50},
-            "get_data": {"method": "GET", "path": "/api/v2/kline/query", "rate_limit": 50},
-            "get_orderbook": {"method": "GET", "path": "/api/v2/order-book", "rate_limit": 50},
-            "get_balance": {"method": "GET", "path": "/api/v2/account-overview", "rate_limit": 50},
-            "market_order": {"method": "POST", "path": "/api/v2/order", "rate_limit": 50},
-            "limit_order": {"method": "POST", "path": "/api/v2/order", "rate_limit": 50},
-            "get_closed_orders": {"method": "GET", "path": "/api/v2/orders/history", "rate_limit": 50},
-            "get_open_orders": {"method": "GET", "path": "/api/v2/orders/all-active", "rate_limit": 50}
+            "get_positions": {"method": 'GET', "path": "/api/v1/position", "rate_limit": 50},
+            "cancel_orders": {"method": "DELETE", "path": "/api/v1/orders", "rate_limit": 50},
+            "get_data": {"method": "GET", "path": "/api/v1/kline/query", "rate_limit": 50},
+            "get_orderbook": {"method": "GET", "path": "/api/v1/level2/snapshot", "rate_limit": 50},
+            "get_balance": {"method": "GET", "path": "/api/v1/account-overview", "rate_limit": 50},
+            "market_order": {"method": "POST", "path": "/api/v1/orders", "rate_limit": 50},
+            "limit_order": {"method": "POST", "path": "/api/v1/orders", "rate_limit": 50},
+            "get_closed_orders": {"method": "GET", "path": "/api/v1/orders", "rate_limit": 50},
+            "get_open_orders": {"method": "GET", "path": "/api/v1/orders", "rate_limit": 50}
         }
         if not debug:
             kwargs["base_url"] = urls.KUCOIN_FUT_BASE_URL
@@ -36,6 +52,7 @@ class Kucoin(Exchange):
     def get_positions(self, symbol: str):
         """
         API to get current positions in future
+        https://docs.kucoin.com/futures/?lang=en_US#get-position-details
 
         :param symbol: symbol
         :return: {
@@ -67,6 +84,7 @@ class Kucoin(Exchange):
     def cancel_orders(self, symbol: str):
         """
         API to cancel all the active orders
+        https://docs.kucoin.com/futures/?lang=en_US#limit-order-mass-cancelation
 
         :param symbol: symbol
         :return:  {
@@ -90,11 +108,13 @@ class Kucoin(Exchange):
     def get_data(self, symbol: str, interval: int, **kwargs):
         """
         API to get OHLCV data
+        https://docs.kucoin.com/futures/?lang=en_US#get-k-line-data-of-contract
 
         :param symbol: symbol
         :param interval: chart interval
         :keyword from: start time
         :keyword ti: end time
+        :keyword is_dataframe: convert data to dataframe or not
         :return: list of list/ pandas dataframe
         """
         params = {
@@ -105,7 +125,7 @@ class Kucoin(Exchange):
         response = self.__signed_request(self._path_config.get("get_data").get("method"),
                                          self._path_config.get("get_data").get("path"),
                                          params)
-        if kwargs.get("is_dataframe", None):
+        if kwargs.get("is_dataframe", None) and response.get("data"):
             try:
                 columns = ['Time', 'Entry price', 'Highest price', 'Lowest price', 'Close price', 'Volume']
                 return pd.DataFrame(response["data"], columns=columns)
@@ -116,9 +136,10 @@ class Kucoin(Exchange):
     def get_orderbook(self, symbol: str, **kwargs):
         """
         Get orderbook
+        https://docs.kucoin.com/futures/?lang=en_US#order-book
 
-        :param symbol:
-        :keyword is_dataframe:
+        :param symbol: contract symbol
+        :keyword is_dataframe: convert data to dataframe or not
         :return: list of list/ pandas dataframe
         """
         params = {
@@ -128,7 +149,7 @@ class Kucoin(Exchange):
         response = self.__signed_request(self._path_config.get("get_orderbook").get("method"),
                                          self._path_config.get("get_orderbook").get("path"),
                                          params)
-        if kwargs.get("is_dataframe", None):
+        if kwargs.get("is_dataframe", None) and response.get("data"):
             try:
                 columns = ['price', 'QTY']
                 df = pd.DataFrame(response["data"]["bids"], columns=columns)
@@ -141,6 +162,7 @@ class Kucoin(Exchange):
     def get_balance(self):
         """
         API to get future account balance
+        https://docs.kucoin.com/futures/?lang=en_US#get-account-overview
 
         :return: list
         """
@@ -148,14 +170,15 @@ class Kucoin(Exchange):
                                          self._path_config.get("get_balance").get("path"))
         return response
 
-    def market_order(self, symbol: str, side: str, quantity: float, **kwargs):
+    def market_order(self, symbol: str, side: str, quantity: float, leverage="5", **kwargs):
         """
         API to place market order
-        https://docs.kucoin.com/futures/#place-an-orde
+        https://docs.kucoin.com/futures/?lang=en_US#place-an-order
 
         :param symbol: symbol
         :param side: buy/sell
         :param quantity: order quantity
+        :param leverage: Leverage of the order
         :return: {
             "code": "200000",
             "data": {
@@ -169,6 +192,7 @@ class Kucoin(Exchange):
             "side": side,
             "type": "market",
             "size": quantity,
+            "leverage": leverage,
             **kwargs
         }
         response = self.__signed_request(self._path_config.get("market_order").get("method"),
@@ -179,7 +203,7 @@ class Kucoin(Exchange):
     def limit_order(self, symbol: str, side: str, price: str, quantity: int, **kwargs):
         """
         API to place limit order
-        https://docs.kucoin.com/futures/#place-an-orde
+        https://docs.kucoin.com/futures/?lang=en_US#place-an-order
 
         :param symbol: symbol
         :param side: buy/sell
@@ -209,7 +233,7 @@ class Kucoin(Exchange):
     def get_closed_orders(self, **kwargs):
         """
         API to get closed orders
-        https://docs.kucoin.com/futures/#get-fills
+        https://docs.kucoin.com/futures/?lang=en_US#get-order-list
 
         :return: {
                 "code": "200000",
@@ -235,15 +259,19 @@ class Kucoin(Exchange):
                 }
             }
         """
+        params = {
+            "status": "done",
+            **kwargs
+        }
         response = self.__signed_request(self._path_config.get("get_closed_orders").get("method"),
                                          self._path_config.get("get_closed_orders").get("path"),
-                                         kwargs)
+                                         params)
         return response
 
     def get_open_orders(self, **kwargs):
         """
         API to get open orders
-        https://docs.kucoin.com/futures/#stop-order-mass-cancelation
+        https://docs.kucoin.com/futures/?lang=en_US#get-order-list
 
         :return:
         """
@@ -256,73 +284,40 @@ class Kucoin(Exchange):
                                          params)
         return response
 
-    def __signed_request(self, method, uri, params=None):
-        uri_path = uri
-        data_json = ''
-        if method in ['GET', 'DELETE']:
-            if params:
-                strl = []
-                for key in sorted(params):
-                    strl.append("{}={}".format(key, params[key]))
-                data_json += '&'.join(strl)
-                uri += '?' + data_json
-                uri_path = uri
-        else:
-            if params:
-                data_json = json.dumps(params)
-                uri_path = uri + data_json
-
-        now_time = int(utils.get_current_timestamp()) * 1000
-        str_to_sign = str(now_time) + method + uri_path
-        sign = base64.b64encode(hmac.new(self.secret.encode('utf-8'), str_to_sign.encode('utf-8'),
-                                         hashlib.sha256).digest())
-        passphrase = base64.b64encode(
-            hmac.new(self.secret.encode('utf-8'), self.pass_phrase.encode('utf-8'), hashlib.sha256).digest())
-        headers = {
-            "KC-API-SIGN": sign,
-            "KC-API-TIMESTAMP": str(now_time),
-            "KC-API-KEY": self.key,
-            "KC-API-PASSPHRASE": passphrase,
-            "Content-Type": "application/json",
-            "KC-API-KEY-VERSION": "2"
-        }
-        response = self.send_request(method, uri, headers, data=data_json)
+    def __signed_request(self, method, url, params=None, data=None):
+        param_data = ""
+        if params:
+            strl = []
+            for key in sorted(params):
+                strl.append("{}={}".format(key, params[key]))
+            param_data += '&'.join(strl)
+            url += '?' + param_data
+        if data:
+            data = json.dumps(data)
+        header = self._get_request_credentials(method, url, data=data)
+        response = self.send_request(method, url, header, data=data)
         return response
 
-    # def __signed_request(self, method, url, params=None, data=None):
-    #     param_data = ""
-    #     if params:
-    #         strl = []
-    #         for key in sorted(params):
-    #             strl.append("{}={}".format(key, params[key]))
-    #         param_data += '&'.join(strl)
-    #         url += '?' + param_data
-    #     if data:
-    #         data = json.dumps(data)
-    #     header = self._get_request_credentials(method, url, params=params, data=data)
-    #     response = self.send_request(method, url, header, params, data)
-    #     return response
+    def _get_sign(self, str_to_sign):
+        signature = base64.b64encode(hmac.new(self.secret.encode('utf-8'), str_to_sign.encode('utf-8'),
+                                              hashlib.sha256).digest())
+        passphrase = base64.b64encode(hmac.new(self.secret.encode('utf-8'), self.pass_phrase.encode('utf-8'),
+                                               hashlib.sha256).digest())
+        return signature, passphrase
 
-    # def _get_sign(self, str_to_sign):
-    #     signature = base64.b64encode(hmac.new(self.secret.encode('utf-8'), str_to_sign.encode('utf-8'),
-    #                                           hashlib.sha256).digest())
-    #     passphrase = base64.b64encode(hmac.new(self.secret.encode('utf-8'), self.pass_phrase.encode('utf-8'),
-    #                                            hashlib.sha256).digest())
-    #     return signature, passphrase
-
-    # def _get_request_credentials(self, method, path, **kwargs):
-    #     timestamp = utils.get_current_timestamp()
-    #     sign_string = ""
-    #     if kwargs.get("data"):
-    #         sign_string = f'{str(timestamp)}{method}{path}{kwargs["data"]}'
-    #     else:
-    #         sign_string = str(timestamp) + method + path
-    #     sign, pass_phrase = self._get_sign(sign_string)
-    #     headers = {
-    #         "KC-API-SIGN": sign,
-    #         "KC-API-TIMESTAMP": str(timestamp),
-    #         "KC-API-KEY": self.key,
-    #         "KC-API-PASSPHRASE": pass_phrase,
-    #         "KC-API-KEY-VERSION": "2"
-    #     }
-    #     return headers
+    def _get_request_credentials(self, method, path, **kwargs):
+        timestamp = utils.get_current_timestamp()
+        if kwargs.get("data"):
+            sign_string = str(timestamp)+method+path+kwargs["data"]
+        else:
+            sign_string = str(timestamp)+method+path
+        sign, pass_phrase = self._get_sign(sign_string)
+        headers = {
+            "KC-API-SIGN": sign,
+            "KC-API-TIMESTAMP": str(timestamp),
+            "KC-API-KEY": self.key,
+            "KC-API-PASSPHRASE": pass_phrase,
+            "KC-API-KEY-VERSION": "2",
+            "Content-Type": "application/json"
+        }
+        return headers

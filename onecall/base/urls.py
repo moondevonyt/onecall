@@ -22,3 +22,4 @@ FTX_FUT_TEST_BASE_URL = "https://ftx.com/api"
 
 # FTX-US
 FTXUS_FUT_BASE_URL = "https://ftx.us/api"
+FTXUS_FUT_TEST_BASE_URL = ""

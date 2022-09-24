@@ -1,5 +1,6 @@
 import hmac
 import hashlib
+import json
 import logging
 import pandas as pd
 from urllib.parse import urlencode
@@ -10,18 +11,35 @@ from base import urls
 
 
 class Bybit(Exchange):
+    INTERVAL_1m = '1'
+    INTERVAL_3m = '3'
+    INTERVAL_5m = '5'
+    INTERVAL_15m = '15'
+    INTERVAL_30m = '30'
+    INTERVAL_1H = '60'
+    INTERVAL_2H = '120'
+    INTERVAL_4H = '240'
+    INTERVAL_6H = '360'
+    INTERVAL_12H = '720'
+    INTERVAL_1D = 'D'
+    INTERVAL_1W = 'W'
+    INTERVAL_1M = 'M'
+
+    # Constants for Order side
+    BUY_SIDE = 'Buy'
+    SELL_SIDE = 'Sell'
 
     def __init__(self, key=None, secret=None, debug=False, **kwargs):
         self._path_config = {
             "get_positions": {"method": "GET", "path": "/private/linear/position/list", "rate_limit": 50},
-            "cancel_active_orders": {"method": "DELETE", "path": "/private/linear/order/cancel-all", "rate_limit": 50},
-            "cancel_stop_orders": {"method": "DELETE", "path": "/private/linear/stop-order/cancel-all", "rate_limit": 50},
+            "cancel_active_orders": {"method": "POST", "path": "/private/linear/order/cancel-all", "rate_limit": 50},
+            "cancel_stop_orders": {"method": "POST", "path": "/private/linear/stop-order/cancel-all", "rate_limit": 50},
             "get_data": {"method": "GET", "path": "/public/linear/kline", "rate_limit": 50},
             "get_orderbook": {"method": "GET", "path": "/v2/public/orderBook/L2", "rate_limit": 50},
             "get_balance": {"method": "GET", "path": "/v2/private/wallet/balance", "rate_limit": 50},
             "market_order": {"method": "POST", "path": "/private/linear/order/create", "rate_limit": 50},
             "limit_order": {"method": "POST", "path": "/private/linear/order/create", "rate_limit": 50},
-            "get_closed_orders": {"method": "GET", "path": "/private/linear/order/search", "rate_limit": 50},
+            "get_closed_orders": {"method": "GET", "path": "/private/linear/order/list", "rate_limit": 50},
             "get_open_orders": {"method": "GET", "path": "/private/linear/order/search", "rate_limit": 50}
         }
         self.recv_window = "5000"
@@ -68,7 +86,7 @@ class Bybit(Exchange):
                                         params)
         return response
 
-    def cancel_orders(self, symbol):
+    def cancel_orders(self, symbol: str):
         """
         API to cancel all orders
 
@@ -86,7 +104,7 @@ class Bybit(Exchange):
                                                     data=payload)
         return {"active_order": active_response, "conditional_order": conditional_response}
 
-    def get_data(self, symbol, interval, **kwargs):
+    def get_data(self, symbol: str, interval: str, start_time: int, **kwargs):
         """
         API to get OHLCV data
 
@@ -100,6 +118,7 @@ class Bybit(Exchange):
         params = {
             "symbol": symbol,
             "interval": interval,
+            "from": start_time,
             **kwargs
         }
         response = self._signed_request(self._path_config.get("get_data").get("method"),
@@ -189,13 +208,17 @@ class Bybit(Exchange):
                                         self._path_config.get("get_balance").get("path"))
         return response
 
-    def market_order(self, symbol, side, quantity):
+    def market_order(self, symbol, side, quantity, time_in_force="GoodTillCancel", reduce_only=False,
+                     close_on_trigger=False, **kwargs):
         """
         API to create market order
 
         :param symbol: symbol
         :param side: buy/sell
         :param quantity: order quantity
+        :param time_in_force: time in force
+        :param reduce_only: your position can only reduce in size if this order is triggered
+        :param close_on_trigger: For a closing order. It can only reduce your position, not increase it.
         :return: {
                 "ret_code": 0,
                 "ret_msg": "OK",
@@ -222,14 +245,18 @@ class Bybit(Exchange):
             "symbol": symbol,
             "order_type": "Market",
             "qty": quantity,
-            "time_in_force": "GTC"
+            "time_in_force": time_in_force,
+            "reduce_only": reduce_only,
+            "close_on_trigger": close_on_trigger,
+            **kwargs
         }
         response = self._signed_request(self._path_config.get("market_order").get("method"),
                                         self._path_config.get("market_order").get("path"),
                                         data=payload)
         return response
 
-    def limit_order(self, symbol, side, quantity, price, time_in_force="GTC"):
+    def limit_order(self, symbol, side, quantity, price, time_in_force="GoodTillCancel", reduce_only=False,
+                    close_on_trigger=False, **kwargs):
         """
         API to create limit order
 
@@ -237,7 +264,9 @@ class Bybit(Exchange):
         :param side: buy/sell
         :param quantity: order quantity
         :param price: order price
-        :param time_in_force: postonly
+        :param time_in_force: time in force
+        :param reduce_only: your position can only reduce in size if this order is triggered
+        :param close_on_trigger: For a closing order. It can only reduce your position, not increase it.
         :return: {
                     "user_id": 533285,
                     "order_id": "a1904030-f99c-4e35-9217-111591f08493",
@@ -260,7 +289,10 @@ class Bybit(Exchange):
             "order_type": "Limit",
             "qty": quantity,
             "price": price,
-            "time_in_force": time_in_force
+            "time_in_force": time_in_force,
+            "reduce_only": reduce_only,
+            "close_on_trigger": close_on_trigger,
+            **kwargs
         }
         response = self._signed_request(self._path_config.get("limit_order").get("method"),
                                         self._path_config.get("limit_order").get("path"),
@@ -300,11 +332,12 @@ class Bybit(Exchange):
         param = {
             "symbol": symbol
         }
-        response = self._signed_request(self._path_config.get("limit_order").get("method"),
-                                        self._path_config.get("limit_order").get("path"),
+        response = self._signed_request(self._path_config.get("get_closed_orders").get("method"),
+                                        self._path_config.get("get_closed_orders").get("path"),
                                         param)
         if response.get("result"):
-            return list(map(lambda order: order["order_status"] == "Filled", response.get("result", [])))
+            return list(filter(lambda order: order.get("order_status") == "Filled",
+                               response.get("result", {}).get("data")))
         return response
 
     def get_open_orders(self, symbol):
@@ -340,40 +373,49 @@ class Bybit(Exchange):
         param = {
             "symbol": symbol
         }
-        response = self._signed_request(self._path_config.get("limit_order").get("method"),
-                                        self._path_config.get("limit_order").get("path"),
+        response = self._signed_request(self._path_config.get("get_open_orders").get("method"),
+                                        self._path_config.get("get_open_orders").get("path"),
                                         param)
-        if response.get("result"):
-            return list(map(lambda order: order["order_status"] == "New", response.get("result", [])))
         return response
 
     def _signed_request(self, method, url, params=None, data=None):
         timestamp = str(utils.get_current_timestamp())
-        if params:
+        if data:
+            data["timestamp"] = timestamp
+            data["api_key"] = self.key
+        elif params:
             params["timestamp"] = timestamp
-            params = urlencode(params)
-        headers = self._get_request_credentials(timestamp, params=params, data=data)
-        response = super().send_request(method, url, headers, params, data)
+            params["api_key"] = self.key
+        else:
+            params = {"timestamp": timestamp, "api_key": self.key}
+        sign = self._get_request_credentials(params=params, data=data)
+        headers = {"Content-Type": "application/json"}
+        if data:
+            data = json.dumps(dict(data, **sign))
+        else:
+            params = urlencode(params) + "&sign=" + sign.get("sign")
+        response = self.send_request(method, url, headers, params, data)
         return response
 
-    def _get_sign(self, timestamp, payload):
-        str_to_sign = str(timestamp) + self.key + self.recv_window + payload
-        sign = hmac.new(bytes(self.secret, "utf-8"), str_to_sign.encode("utf-8"), hashlib.sha256)
+    def _get_sign(self, str_to_sign):
+        sign = hmac.new(self.secret.encode("utf-8"), str_to_sign.encode("utf-8"), hashlib.sha256)
         return sign.hexdigest()
 
-    def _get_request_credentials(self, timestamp, params=None, data=None):
-        if params:
-            sign = self._get_sign(timestamp, params)
-        elif data:
-            sign = self._get_sign(timestamp, str(data))
+    def _get_request_credentials(self, params=None, data=None):
+        if data:
+            sign = self._get_sign(self._get_sign_string(data))
         else:
-            sign = self._get_sign(timestamp, '')
-        headers = {
-            'X-BAPI-API-KEY': self.key,
-            'X-BAPI-SIGN': sign,
-            'X-BAPI-SIGN-TYPE': '2',
-            'X-BAPI-TIMESTAMP': timestamp,
-            'X-BAPI-RECV-WINDOW': self.recv_window,
-            'Content-Type': 'application/json'
-        }
-        return headers
+            sign = self._get_sign(self._get_sign_string(params))
+        return {"sign": sign}
+
+    def _get_sign_string(self, params):
+        sign_string = ""
+        for key in sorted(params.keys()):
+            v = params[key]
+            if isinstance(params[key], bool):
+                if params[key]:
+                    v = 'true'
+                else:
+                    v = 'false'
+            sign_string += key + '=' + str(v) + '&'
+        return sign_string[:-1]

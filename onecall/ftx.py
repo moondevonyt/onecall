@@ -2,8 +2,10 @@ import hmac
 import hashlib
 import json
 import logging
+
+import pandas
 import pandas as pd
-import time
+import requests
 from urllib.parse import urlencode
 
 from base import utils
@@ -15,7 +17,29 @@ class FTX(Exchange):
     """
     FTX API Class
     """
-    def __init__(self, key=None, secret=None, debug=False, **kwargs):
+
+    # Intervals
+    INTERVAL_15 = 15
+    INTERVAL_60 = 60
+    INTERVAL_300 = 300
+    INTERVAL_900 = 900
+    INTERVAL_3600 = 3600
+    INTERVAL_14400 = 14400
+    INTERVAL_86400 = 86400
+
+    # Constants for Order side
+    BUY_SIDE = 'buy'
+    SELL_SIDE = 'sell'
+
+    def __init__(self, key=None, secret=None, **kwargs):
+        """
+        FTX API class
+        https://docs.ftx.com/#rest-api
+
+        :param key: API key
+        :param secret: Secret key
+        :param kwargs:
+        """
         self._path_config = {
             "get_positions": {"method": "GET", "path": "/positions", "rate_limit": 50},
             "cancel_orders": {"method": "DELETE", "path": "/orders", "rate_limit": 50},
@@ -27,16 +51,14 @@ class FTX(Exchange):
             "get_closed_orders": {"method": "GET", "path": "/orders/history", "rate_limit": 50},
             "get_open_orders": {"method": "GET", "path": "/orders", "rate_limit": 50}
         }
-        if not debug:
-            kwargs["base_url"] = urls.FTX_FUT_BASE_URL
-        else:
-            kwargs["base_url"] = urls.FTX_FUT_TEST_BASE_URL
+        kwargs["base_url"] = urls.FTX_FUT_BASE_URL
         super().__init__(key, secret, **kwargs)
         return
 
     def get_positions(self, symbol):
         """
         API to get current positions
+        https://docs.ftx.com/#get-positions
 
         :param symbol: symbol
         :return: {
@@ -76,6 +98,7 @@ class FTX(Exchange):
     def cancel_orders(self, symbol):
         """
         API to cancel all orders
+        https://docs.ftx.com/#cancel-all-orders
 
         :param symbol: contract symbol
         :return: {
@@ -94,6 +117,7 @@ class FTX(Exchange):
     def get_data(self, symbol, interval=15, **kwargs):
         """
         API to get data
+        https://docs.ftx.com/#get-historical-prices
 
         :param symbol: contract symbol
         :param interval: interval
@@ -121,7 +145,7 @@ class FTX(Exchange):
         response = self._signed_request(self._path_config.get("get_data").get("method"),
                                         self._path_config.get("get_data").get("path").format(symbol=symbol),
                                         params)
-        if response.get("is_dataframe") and response.get("result"):
+        if kwargs.get("is_dataframe") and response.get("result"):
             try:
                 return pd.DataFrame(response.get("result"))
             except Exception as e:
@@ -131,6 +155,7 @@ class FTX(Exchange):
     def get_orderbook(self, symbol, limit=100, is_dataframe=False):
         """
         API to get orderbook
+        https://docs.ftx.com/#get-orderbook
 
         :param symbol: contract symbol
         :param limit: data limit
@@ -159,12 +184,15 @@ class FTX(Exchange):
         response = self._signed_request(self._path_config.get("get_orderbook").get("method"),
                                         self._path_config.get("get_orderbook").get("path").format(symbol=symbol),
                                         params)
-        if response.get("is_dataframe") and response.get("result"):
+        if is_dataframe and response.get("result"):
             try:
                 columns = ['price', 'QTY']
-                df = pd.DataFrame(response["result"]["bids"], columns=columns)
-                orderbook = df.append(pd.DataFrame(response["result"]["asks"], columns=columns), ignore_index=True)
-                return orderbook
+                ask = pd.DataFrame(response["result"]["bids"], columns=columns)
+                ask["type"] = ["ask" for i in range(0, ask.shape[0])]
+                bid = pd.DataFrame(response["result"]["asks"], columns=columns)
+                bid["type"] = ["bid" for i in range(0, bid.shape[0])]
+                ask = pandas.concat([bid, ask], ignore_index=True)
+                return ask
             except Exception as e:
                 logging.error("failed to create dataframe: ", e)
         return response
@@ -172,6 +200,7 @@ class FTX(Exchange):
     def get_balance(self):
         """
         API to get the balance
+        https://docs.ftx.com/#get-balances
 
         :return: {
               "success": true,
@@ -204,6 +233,7 @@ class FTX(Exchange):
     def market_order(self, symbol, side, quantity, **kwargs):
         """
         API to place market order
+        https://docs.ftx.com/#place-order
 
         :param symbol: contract symbol
         :param side: buy/sell
@@ -234,6 +264,7 @@ class FTX(Exchange):
             "side": side,
             "type": "market",
             "size": quantity,
+            "price": None,
             **kwargs
         }
         response = self._signed_request(self._path_config.get("market_order").get("method"),
@@ -244,6 +275,7 @@ class FTX(Exchange):
     def limit_order(self, symbol, side, quantity, price, **kwargs):
         """
         API to place limit order
+        https://docs.ftx.com/#place-order
 
         :param symbol: contract symbol
         :param side: buy/sell
@@ -287,6 +319,7 @@ class FTX(Exchange):
     def get_closed_orders(self):
         """
         API to get all closed orders
+        https://docs.ftx.com/#get-order-history
 
         :return: {
               "success": true,
@@ -313,8 +346,8 @@ class FTX(Exchange):
               "hasMoreData": false,
             }
         """
-        response = self._signed_request(self._path_config.get("limit_order").get("method"),
-                                        self._path_config.get("limit_order").get("path"))
+        response = self._signed_request(self._path_config.get("get_closed_orders").get("method"),
+                                        self._path_config.get("get_closed_orders").get("path"))
         if response.get("result"):
             return list(filter(lambda order: order.get("status", "") == "closed", response.get("result")))
         return response
@@ -322,6 +355,7 @@ class FTX(Exchange):
     def get_open_orders(self):
         """
         API to get all open orders
+        https://docs.ftx.com/#get-open-orders
 
         :return: {
               "success": true,
@@ -353,21 +387,24 @@ class FTX(Exchange):
 
     def _signed_request(self, method, url, params=None, data=None):
         ts = str(utils.get_current_timestamp())
-        params = urlencode(params) if params else None
-        data = json.dump(data) if data else None
-        header = self._get_request_credentials(ts, method, url, params, data)
-        response = self.send_request(method, url, header, params, data)
+        params = urlencode(params) if params else ""
+        data = json.dumps(data) if data else None
+        headers = self._get_request_credentials(ts, method, url, params, data)
+        response = self.send_request(method, url, headers, params, data)
         return response
 
     def _get_sign(self, data):
         m = hmac.new(self.secret.encode(), data.encode(), hashlib.sha256)
         return m.hexdigest()
 
-    def _get_request_credentials(self, ts, method, path, params='', data=None):
-        sign_string = f'{ts}{method}{path}?{params}'
-        if data:
-            sign_string += data
-        sing = self._get_sign(sign_string)
+    def _get_request_credentials(self, ts, method, path, params="", data=None):
+        url = f'{self.base_url}{path}?{params}'
+        request = requests.Request(method=method, url=url, data=data)
+        prepared = request.prepare()
+        signature_payload = f'{ts}{prepared.method}{prepared.path_url}'
+        if prepared.body:
+            signature_payload += prepared.body
+        sing = self._get_sign(signature_payload)
         header = {
             "FTX-KEY": self.key,
             "FTX-SIGN": sing,

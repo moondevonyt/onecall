@@ -38,7 +38,6 @@ class FTX(Exchange):
 
         :param key: API key
         :param secret: Secret key
-        :param kwargs:
         """
         self._path_config = {
             "get_positions": {"method": "GET", "path": "/positions", "rate_limit": 50},
@@ -51,7 +50,8 @@ class FTX(Exchange):
             "get_closed_orders": {"method": "GET", "path": "/orders/history", "rate_limit": 50},
             "get_open_orders": {"method": "GET", "path": "/orders", "rate_limit": 50}
         }
-        kwargs["base_url"] = urls.FTX_FUT_BASE_URL
+        if not kwargs.get("base_url"):
+            kwargs["base_url"] = urls.FTX_FUT_BASE_URL
         super().__init__(key, secret, **kwargs)
         return
 
@@ -405,9 +405,16 @@ class FTX(Exchange):
         if prepared.body:
             signature_payload += prepared.body
         sing = self._get_sign(signature_payload)
-        header = {
-            "FTX-KEY": self.key,
-            "FTX-SIGN": sing,
-            "FTX-TS": ts
-        }
+        if self.base_url == urls.FTXUS_FUT_BASE_URL:
+            header = {
+                "FTXUS-KEY": self.key,
+                "FTXUS-SIGN": sing,
+                "FTXUS-TS": ts
+            }
+        else:
+            header = {
+                "FTX-KEY": self.key,
+                "FTX-SIGN": sing,
+                "FTX-TS": ts
+            }
         return header

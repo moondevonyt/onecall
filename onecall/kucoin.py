@@ -13,7 +13,9 @@ from base import urls
 
 
 class Kucoin(Exchange):
-
+    """
+    Kucoin API class
+    """
     # interval
     INTERVAL_1 = 15
     INTERVAL_15 = 15
@@ -31,6 +33,15 @@ class Kucoin(Exchange):
     SELL_SIDE = "sell"
 
     def __init__(self, key=None, secret=None, passphrase=None, debug=False, **kwargs):
+        """
+        Kucoin API class
+        https://docs.kucoin.com/futures/#general
+
+        :param key: api key
+        :param secret: secret key
+        :param passphrase: passphrase
+        :param debug: flag to switch to test env
+        """
         self._path_config = {
             "get_positions": {"method": 'GET', "path": "/api/v1/position", "rate_limit": 50},
             "cancel_orders": {"method": "DELETE", "path": "/api/v1/orders", "rate_limit": 50},

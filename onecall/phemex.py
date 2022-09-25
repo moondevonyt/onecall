@@ -15,6 +15,7 @@ from base import urls
 class Phemex(Exchange):
     """
     Phemex API class
+    https://github.com/phemex/phemex-api-docs/blob/master/Public-Contract-API-en.md
     """
     # Interval constants
     MINUTE_1 = 60
@@ -46,6 +47,8 @@ class Phemex(Exchange):
     def __init__(self, key=None, secret=None, debug=False, **kwargs):
         """
         Phemex API class
+        https://github.com/phemex/phemex-api-docs/blob/master/Public-Contract-API-en.md
+
         :param key: key
         :param secret: secret key
         :param debug: connect to testnet
@@ -72,6 +75,8 @@ class Phemex(Exchange):
     def get_positions(self, currency="USD"):
         """
         API to get current positions
+        https://github.com/phemex/phemex-api-docs/blob/master/Public-Contract-API-en.md#querytradeaccount
+
         :param currency: symbol
         :return: {
                 "code": 0,
@@ -117,6 +122,7 @@ class Phemex(Exchange):
     def cancel_orders(self, symbol: str):
         """
         API to cancel all orders
+        https://github.com/phemex/phemex-api-docs/blob/master/Public-Contract-API-en.md#cancelall
 
         :param symbol: future symbol
         :return: data part of response is subject to change
@@ -133,6 +139,7 @@ class Phemex(Exchange):
     def get_data(self, symbol: str, interval: int, **kwargs):
         """
         API to get OHLCV data
+        https://github.com/phemex/phemex-api-docs/blob/master/Public-Contract-API-en.md#querykline
 
         :param symbol: future symbol
         :param interval: interval
@@ -168,6 +175,7 @@ class Phemex(Exchange):
     def get_orderbook(self, symbol: str, is_dataframe=False):
         """
         API to get orderbook
+        https://github.com/phemex/phemex-api-docs/blob/master/Public-Contract-API-en.md#queryorderbook
 
         :param symbol: future_symbol
         :param is_dataframe: whether to return row json/dataframe
@@ -207,6 +215,7 @@ class Phemex(Exchange):
     def get_balance(self, currency="USD"):
         """
         API to get account balance
+        https://github.com/phemex/phemex-api-docs/blob/master/Public-Contract-API-en.md#querytradeaccount
 
         :param currency: currency. USD,BTC
         :return: {
@@ -235,6 +244,7 @@ class Phemex(Exchange):
     def market_order(self, symbol: str, side: str, order_qty: float, **kwargs):
         """
         API to place market order
+        https://github.com/phemex/phemex-api-docs/blob/master/Public-Contract-API-en.md#placeorder
 
         :param symbol: coin symbol
         :param side: BUY/SELL
@@ -291,6 +301,7 @@ class Phemex(Exchange):
     def limit_order(self, symbol: str, side: str, order_qty: int, price: float, **kwargs):
         """
         API to place limit order
+        https://github.com/phemex/phemex-api-docs/blob/master/Public-Contract-API-en.md#placeorder
 
         :param symbol: currency symbol
         :param side: BUY/SELL
@@ -349,6 +360,7 @@ class Phemex(Exchange):
     def get_closed_orders(self, symbol):
         """
         API to get closed order
+        https://github.com/phemex/phemex-api-docs/blob/master/Public-Contract-API-en.md#queryorder
 
         :param symbol: currency symbol
         :return: {
@@ -392,6 +404,7 @@ class Phemex(Exchange):
     def get_open_orders(self, symbol):
         """
         API to get all open orders by symbol
+        https://github.com/phemex/phemex-api-docs/blob/master/Public-Contract-API-en.md#queryopenorder
 
         :param symbol: currency symbol
         :return: {

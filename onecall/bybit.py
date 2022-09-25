@@ -11,6 +11,9 @@ from base import urls
 
 
 class Bybit(Exchange):
+    """
+    Bybit API Class
+    """
     INTERVAL_1m = '1'
     INTERVAL_3m = '3'
     INTERVAL_5m = '5'
@@ -30,6 +33,14 @@ class Bybit(Exchange):
     SELL_SIDE = 'Sell'
 
     def __init__(self, key=None, secret=None, debug=False, **kwargs):
+        """
+        Bybit API class
+        https://bybit-exchange.github.io/docs/futuresV2/linear/#t-introduction
+
+        :param key: api key
+        :param secret: secret key
+        :param debug: flag to switch to test env
+        """
         self._path_config = {
             "get_positions": {"method": "GET", "path": "/private/linear/position/list", "rate_limit": 50},
             "cancel_active_orders": {"method": "POST", "path": "/private/linear/order/cancel-all", "rate_limit": 50},
@@ -53,6 +64,7 @@ class Bybit(Exchange):
     def get_positions(self, symbol: str):
         """
         API to get current positions
+        https://bybit-exchange.github.io/docs/futuresV2/linear/#t-position
 
         :param symbol: contract symbol
         :return: {
@@ -89,6 +101,8 @@ class Bybit(Exchange):
     def cancel_orders(self, symbol: str):
         """
         API to cancel all orders
+        https://bybit-exchange.github.io/docs/futuresV2/linear/#t-cancelallactive
+        https://bybit-exchange.github.io/docs/futuresV2/linear/#t-cancelallcond
 
         :param symbol: symbol
         :return: {"active_order": {active_response}, "conditional_order": {conditional_response}}
@@ -107,10 +121,11 @@ class Bybit(Exchange):
     def get_data(self, symbol: str, interval: str, start_time: int, **kwargs):
         """
         API to get OHLCV data
+        https://bybit-exchange.github.io/docs/futuresV2/linear/#t-querykline
 
         :param symbol: symbol
         :param interval: interval
-        :keyword start_time: start time
+        :param start_time: start time
         :keyword limit: data limit
         :keyword is_dataframe: convert the data to pandas dataframe
         :return: list of list/ pandas dataframe
@@ -134,6 +149,7 @@ class Bybit(Exchange):
     def get_orderbook(self, symbol, is_dataframe=False):
         """
         API to get orderbook
+        https://bybit-exchange.github.io/docs/futuresV2/linear/#t-orderbook
 
         :param symbol: symbol
         :param is_dataframe: convert the data to pandas dataframe
@@ -175,6 +191,7 @@ class Bybit(Exchange):
     def get_balance(self):
         """
         API to get balance
+        https://bybit-exchange.github.io/docs/futuresV2/inverse/#t-balance
 
         :return: {
                 "ret_code": 0,
@@ -212,6 +229,7 @@ class Bybit(Exchange):
                      close_on_trigger=False, **kwargs):
         """
         API to create market order
+        https://bybit-exchange.github.io/docs/futuresV2/linear/#t-placeactive
 
         :param symbol: symbol
         :param side: buy/sell
@@ -259,6 +277,7 @@ class Bybit(Exchange):
                     close_on_trigger=False, **kwargs):
         """
         API to create limit order
+        https://bybit-exchange.github.io/docs/futuresV2/linear/#t-placeactive
 
         :param symbol: symbol
         :param side: buy/sell
@@ -302,6 +321,7 @@ class Bybit(Exchange):
     def get_closed_orders(self, symbol):
         """
         API to get closed orders
+        https://bybit-exchange.github.io/docs/futuresV2/linear/#t-getactive
 
         :param symbol: symbols
         :return: {
@@ -343,6 +363,7 @@ class Bybit(Exchange):
     def get_open_orders(self, symbol):
         """
         API to get open orders
+        https://bybit-exchange.github.io/docs/futuresV2/linear/#t-queryactive
 
         :param symbol: symbol
         :return: {

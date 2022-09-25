@@ -13,8 +13,16 @@ from base import urls
 class Binance(Exchange):
     """
     Binance API class
+    https://binance-docs.github.io/apidocs/futures/en/#general-info
     """
     def __init__(self, key=None, secret=None, debug=False, **kwargs):
+        """
+        Binance API
+
+        :param key: api key
+        :param secret: secret key
+        :param debug: flag to switch to testnet
+        """
         self._path_config = {
             "get_positions": {"method": "GET", "path": "/fapi/v2/positionRisk", "rate_limit": 50},
             "cancel_orders": {"method": "DELETE", "path": "/fapi/v1/allOpenOrders", "rate_limit": 50},
@@ -59,6 +67,8 @@ class Binance(Exchange):
     def get_positions(self, symbol: str):
         """
         API to get current positions
+        https://binance-docs.github.io/apidocs/futures/en/#position-information-v2-user_data
+
         :param symbol: future symbol
         :return:[
             {
@@ -92,6 +102,8 @@ class Binance(Exchange):
     def cancel_orders(self, symbol: str):
         """
         API to cancel all the active orders
+        https://binance-docs.github.io/apidocs/futures/en/#cancel-all-open-orders-trade
+
         :param symbol: future symbol
         :return: [
             {
@@ -136,6 +148,8 @@ class Binance(Exchange):
     def get_data(self, symbol: str, interval: int, **kwargs):
         """
         API to get OHLCV data
+        https://binance-docs.github.io/apidocs/futures/en/#kline-candlestick-data
+
         :param symbol: future symbol
         :param interval: time interval
         :keyword start_date: start time of the data
@@ -172,10 +186,11 @@ class Binance(Exchange):
     def get_orderbook(self, symbol: str, **kwargs):
         """
         Get orderbook
+        https://binance-docs.github.io/apidocs/futures/en/#order-book
+
         :param symbol: future symbol
-        Keyword Args:
-            limit: result limit
-            is_dataframe: convert the data to pandas dataframe
+        :keyword limit: result limit
+        :keyword is_dataframe: convert the data to pandas dataframe
         :return: {
               "lastUpdateId": 1027024,
               "E": 1589436922972,   // Message output time
@@ -215,6 +230,7 @@ class Binance(Exchange):
     def get_balance(self):
         """
         API to get future account balance
+        https://binance-docs.github.io/apidocs/futures/en/#account-information-v2-user_data
 
         :return: [
                     {
@@ -241,6 +257,8 @@ class Binance(Exchange):
     def market_order(self, symbol: str, side: str, quantity: float):
         """
         API to place market order
+        https://binance-docs.github.io/apidocs/futures/en/#new-order-trade
+
         :param symbol: future symbol
         :param side: buy/sell
         :param quantity:
@@ -285,6 +303,8 @@ class Binance(Exchange):
     def limit_order(self, symbol: str, side: str, quantity: float, price: float, time_in_force="GTC"):
         """
         API to place limit order
+        https://binance-docs.github.io/apidocs/futures/en/#new-order-trade
+
         :param symbol: future symbol
         :param side: buy/sell
         :param quantity: trade quantity
@@ -333,6 +353,8 @@ class Binance(Exchange):
     def get_closed_orders(self, symbol: str):
         """
         API to get all the closed orders
+        https://binance-docs.github.io/apidocs/futures/en/#all-orders-user_data
+
         :param symbol: future symbol
         :return: [
               {
@@ -376,6 +398,8 @@ class Binance(Exchange):
     def get_open_orders(self, symbol: str):
         """
         API to get all active orders
+        https://binance-docs.github.io/apidocs/futures/en/#current-all-open-orders-user_data
+
         :param symbol: symbol
         :return: [
               {

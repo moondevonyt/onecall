@@ -49,8 +49,8 @@ client = Biance(key="5hQJkQUprFQwNGIz3l",
               secret="jnPXDWJ7OZmCLBwTSc0IHiGTIXmpEBlGM9pY")
               
 # create testnet client
-client = Biance(key="5hQJkQUprFQwNGIz3l",
-              secret="jnPXDWJ7OZmCLBwTSc0IHiGTIXmpEBlGM9pY",
+client = Biance(key="<api_key>",
+              secret="<secret_key>",
               debug=True)
               
 # get all positions for a symbol              

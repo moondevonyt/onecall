@@ -45,8 +45,8 @@ print(exchanges)
 from onecall import Binance
 
 # create mainnet client
-client = Biance(key="5hQJkQUprFQwNGIz3l",
-              secret="jnPXDWJ7OZmCLBwTSc0IHiGTIXmpEBlGM9pY")
+client = Biance(key="<api_key>",
+              secret="<secret_key>")
               
 # create testnet client
 client = Biance(key="<api_key>",

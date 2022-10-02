@@ -201,13 +201,15 @@ class Phemex(Exchange):
         response = self._signed_request(self._path_config.get("get_orderbook").get("method"),
                                         self._path_config.get("get_orderbook").get("path"),
                                         params)
-        if is_dataframe:
+        if is_dataframe and response.get("result"):
             try:
                 columns = ['price', 'QTY']
-                df = pd.DataFrame(response["result"]["book"]["bids"], columns=columns)
-                orderbook = df.append(pd.DataFrame(response["result"]["book"]["asks"], columns=columns),
-                                      ignore_index=True)
-                return orderbook
+                bid = pd.DataFrame(response["result"]["book"]["bids"], columns=columns)
+                bid["type"] = ["bid" for i in range(0, bid.shape[0])]
+                ask = pd.DataFrame(response["result"]["book"]["asks"], columns=columns)
+                ask["type"] = ["ask" for i in range(0, ask.shape[0])]
+                df = pd.concat([bid, ask], ignore_index=True)
+                return df
             except Exception as e:
                 logging.error(e)
         return response

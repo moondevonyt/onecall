@@ -11,6 +11,14 @@ It is intended to be used by coders, developers,
 technically-skilled traders, data-scientists and 
 financial analysts for building trading algorithms.
 
+## Available Crypto exchanges
+1. Binance
+2. Phemex
+3. Kucoin
+4. Bybit
+5. FTX
+6. FTX.us
+
 ## Installation
 
 Use the package manager [pip](https://pip.pypa.io/en/stable/) to install foobar.
@@ -19,20 +27,53 @@ Use the package manager [pip](https://pip.pypa.io/en/stable/) to install foobar.
 pip install onecall
 ```
 
+## Getting available Exchange list
+
+```python
+import onecall
+
+exchanges = onecall.exchanges
+
+print(exchanges)
+```
+
 ## Usage
+
+### connecting to exchange
 
 ```python
 from onecall import Binance
 
-# create client
-client = Biance(key="5hQJkQUprFQwNGIz3l",
-              secret="jnPXDWJ7OZmCLBwTSc0IHiGTIXmpEBlGM9pY")
+# create mainnet client
+client = Biance(key="<api_key>",
+              secret="<secret_key>")
+              
+# create testnet client
+client = Biance(key="<api_key>",
+              secret="<secret_key>",
+              debug=True)
+              
+# get all positions for a symbol              
+positions = client.get_positions("<symbol>")
 
-# returns open order list
-open_orders = client.get_open_orders()
+#cancel all orders
+response = client.cancel_orders("<symbol>")
 
-# print open orders
-print(open_orders)
+# get kline data.
+kline = client.get_data("<symbol>", client.INTERVAL_30m, is_dataframe=True) #is_dataframe flag return data as pandas.Dataframe instead of json
+
+# get orderbook
+orderbook = client.get_orderbook("<symbol>", is_dataframe=True) #is_dataframe flag return data as pandas.Dataframe instead of json
+
+#get account balance
+balance = client.get_balance()
+
+# place market order
+response = client.market_order("<symbol>", client.BUY_SIDE, 10)
+
+# place limit order
+response = client.limit_order("<symbol>", client.BUY_SIDE, 10, .02000)
+
 ```
 
 ## Contributing

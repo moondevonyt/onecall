@@ -191,7 +191,7 @@ class FTX(Exchange):
                 ask["type"] = ["ask" for i in range(0, ask.shape[0])]
                 bid = pd.DataFrame(response["result"]["asks"], columns=columns)
                 bid["type"] = ["bid" for i in range(0, bid.shape[0])]
-                ask = pandas.concat([bid, ask], ignore_index=True)
+                ask = pd.concat([bid, ask], ignore_index=True)
                 return ask
             except Exception as e:
                 logging.error("failed to create dataframe: ", e)

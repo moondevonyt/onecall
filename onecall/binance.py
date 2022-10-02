@@ -220,9 +220,12 @@ class Binance(Exchange):
         if kwargs.get("is_dataframe"):
             try:
                 columns = ['price', 'QTY']
-                df = pd.DataFrame(response["bids"], columns=columns)
-                orderbook = df.append(pd.DataFrame(response["asks"], columns=columns), ignore_index=True)
-                return orderbook
+                bid = pd.DataFrame(response["bids"], columns=columns)
+                bid["type"] = ["bid" for i in range(0, bid.shape[0])]
+                ask = pd.DataFrame(response["asks"], columns=columns)
+                ask["type"] = ["ask" for i in range(0, bid.shape[0])]
+                df = pd.concat([bid, ask], ignore_index=True)
+                return df
             except Exception as e:
                 logging.error("failed to create dataframe: ", e)
         return response

@@ -1,7 +1,7 @@
 # Binance
-BINANCE_SPOT_BASE_URL = ""
+BINANCE_SPOT_BASE_URL = "https://api.binance.com"
 BINANCE_FUT_BASE_URL = "https://fapi.binance.com"
-BINANCE_SPOT_TEST_BASE_URL = ""
+BINANCE_SPOT_TEST_BASE_URL = "https://testnet.binance.vision"
 BINANCE_FUT_TEST_BASE_URL = "https://testnet.binancefuture.com"
 
 # Phemex

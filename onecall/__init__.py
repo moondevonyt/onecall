@@ -1,4 +1,5 @@
 from binance import Binance
+from binance_spot import BinanceSpot
 from phemex import Phemex
 from kucoin import Kucoin
 from bybit import Bybit
@@ -10,5 +11,6 @@ exchanges = [
     'Phemex',
     'Kucoin',
     'Bybit',
-    'FTX'
+    'FTX',
+    'Binance_spot',
 ]

@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-VERSION = '0.0.3'
+VERSION = '1.0.0'
 DESCRIPTION = 'For crypto algorithm trading'
 LONG_DESCRIPTION = 'hmv-onecall library is used to connect and trade with cryptocurrency exchanges'
 

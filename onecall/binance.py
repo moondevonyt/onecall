@@ -161,7 +161,7 @@ class Binance(Exchange):
         params = {
             "symbol": symbol,
             "interval": interval,
-            "timestamp": utils.get_current_timestamp(),
+            # "timestamp": utils.get_current_timestamp(),
             "limit": kwargs.get("limit") if kwargs.get("limit", None) else self._LIMIT,
         }
         if kwargs.get("start_date"):
@@ -223,7 +223,7 @@ class Binance(Exchange):
                 bid = pd.DataFrame(response["bids"], columns=columns)
                 bid["type"] = ["bid" for i in range(0, bid.shape[0])]
                 ask = pd.DataFrame(response["asks"], columns=columns)
-                ask["type"] = ["ask" for i in range(0, bid.shape[0])]
+                ask["type"] = ["ask" for i in range(0, ask.shape[0])]
                 df = pd.concat([bid, ask], ignore_index=True)
                 return df
             except Exception as e:

@@ -57,9 +57,9 @@ class BinanceSpot(Exchange):
         self.INTERVAL_1M = '1M'
 
         if not debug:
-            kwargs["base_url"] = urls.BINANCE_FUT_BASE_URL
+            kwargs["base_url"] = urls.BINANCE_SPOT_BASE_URL
         else:
-            kwargs["base_url"] = urls.BINANCE_FUT_TEST_BASE_URL
+            kwargs["base_url"] = urls.BINANCE_SPOT_TEST_BASE_URL
         super().__init__(key, secret, **kwargs)
         return
 
@@ -125,7 +125,6 @@ class BinanceSpot(Exchange):
         params = {
             "symbol": symbol,
             "interval": interval,
-            "timestamp": utils.get_current_timestamp(),
             "limit": kwargs.get("limit") if kwargs.get("limit", None) else self._LIMIT,
         }
         if kwargs.get("start_date"):
@@ -187,7 +186,7 @@ class BinanceSpot(Exchange):
                 bid = pd.DataFrame(response["bids"], columns=columns)
                 bid["type"] = ["bid" for i in range(0, bid.shape[0])]
                 ask = pd.DataFrame(response["asks"], columns=columns)
-                ask["type"] = ["ask" for i in range(0, bid.shape[0])]
+                ask["type"] = ["ask" for i in range(0, ask.shape[0])]
                 df = pd.concat([bid, ask], ignore_index=True)
                 return df
             except Exception as e:

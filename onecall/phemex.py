@@ -12,7 +12,7 @@ from onecall.base.exchange import Exchange
 from onecall.base import urls
 
 
-class Phemex(Exchange):
+class phemex(Exchange):
     """
     Phemex API class
     https://github.com/phemex/phemex-api-docs/blob/master/Public-Contract-API-en.md

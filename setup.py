@@ -1,16 +1,16 @@
 from setuptools import setup, find_packages
 
 VERSION = '1.0.0'
-DESCRIPTION = 'For crypto algorithm trading'
-LONG_DESCRIPTION = 'hmv-onecall library is used to connect and trade with cryptocurrency exchanges'
+DESCRIPTION = 'An algorithmic trading python package to save thousands of hours with the quickest crypto trading library so you can easily algo trade on any exchange & execute with unified function calls'
+LONG_DESCRIPTION = 'the onecall trading bot python library saves you thousands of hours to connect and trade with cryptocurrency exchanges. Taking out all of the hard work of connected to many exchanges and figuring out their documentation. with onecall you simply connect to one call and all of the functions for each exchange are the same so you save time and don't have to read new docs. onecall has a ton of custom algo trading functions built in saving you thousands of hours of time'
 
 # Setting up
 setup(
     # the name must match the folder name 'verysimplemodule'
-    name="hmv-onecall",
+    name="onecall",
     version=VERSION,
-    author="Joshy Joy",
-    author_email="joshyjoy999@gmail.com",
+    author="Moon Dev",
+    author_email="moondevonyt@gmail.com",
     description=DESCRIPTION,
     long_description=LONG_DESCRIPTION,
     packages=find_packages(),
@@ -19,7 +19,7 @@ setup(
         'requests>=2.18.4',
     ],
 
-    keywords=['python', 'onecall'],
+    keywords=['python', 'onecall', 'trading bot','quant', 'trading', 'trading algo', 'algorithmic trading', 'algo trading', 'crypto', 'exchange', 'automate trading', 'pinescript', 'mev', 'crypto exchange', 'binance', 'ftx', 'ethereum', 'solana', 'bitcoin', 'coinbase', 'phemex', 'bybit'],
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Developers",

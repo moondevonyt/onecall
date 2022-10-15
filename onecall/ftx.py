@@ -13,7 +13,7 @@ from onecall.base.exchange import Exchange
 from onecall.base import urls
 
 
-class ftx(Exchange):
+class FTX(Exchange):
     """
     FTX API Class
     """

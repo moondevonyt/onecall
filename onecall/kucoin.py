@@ -12,7 +12,7 @@ from onecall.base.exchange import Exchange
 from onecall.base import urls
 
 
-class kucoin(Exchange):
+class Kucoin(Exchange):
     """
     Kucoin API class
     """

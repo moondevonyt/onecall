@@ -10,7 +10,7 @@ from onecall.base.exchange import Exchange
 from onecall.base import urls
 
 
-class bybit(Exchange):
+class Bybit(Exchange):
     """
     Bybit API Class
     """

@@ -10,7 +10,7 @@ from onecall.base.exchange import Exchange
 from onecall.base import urls
 
 
-class binance_spot(Exchange):
+class BinanceSpot(Exchange):
     """
     Binance API class
     https://binance-docs.github.io/apidocs/spot/en/#general-api-information

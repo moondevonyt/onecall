@@ -1,10 +1,10 @@
-from onecall.binance import Binance
-from onecall.binance_spot import BinanceSpot
-from onecall.phemex import Phemex
-from onecall.kucoin import Kucoin
-from onecall.bybit import Bybit
-from onecall.ftx import FTX
-from onecall.ftx_us import FTXUS
+from onecall.binance import Binance as binance
+from onecall.binance_spot import BinanceSpot as binancespot
+from onecall.phemex import Phemex as phemex
+from onecall.kucoin import Kucoin as kucoin
+from onecall.bybit import Bybit as bybit
+from onecall.ftx_us import FTXUS as ftxus
+from onecall.ftx import FTX as ftx
 
 exchanges = [
     "Biance",
@@ -16,12 +16,12 @@ exchanges = [
 ]
 
 __all__ = [
-    Binance,
-    BinanceSpot,
-    Phemex,
-    Kucoin,
-    Bybit,
-    FTX,
-    FTXUS,
+    binance,
+    binancespot,
+    phemex,
+    kucoin,
+    bybit,
+    ftxus,
+    ftx,
     exchanges,
 ]

@@ -2,7 +2,7 @@ from onecall.ftx import FTX
 from onecall.base import urls
 
 
-class ftxus(FTX):
+class FTXUS(FTX):
     """
     API class for FTX.US
     """

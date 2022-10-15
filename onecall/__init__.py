@@ -1,10 +1,10 @@
-from binance import Binance
-from binance_spot import BinanceSpot
-from phemex import Phemex
-from kucoin import Kucoin
-from bybit import Bybit
-from ftx import FTX
-from ftx_us import FTXUS
+from onecall.binance import Binance
+from onecall.binance_spot import BinanceSpot
+from onecall.phemex import Phemex
+from onecall.kucoin import Kucoin
+from onecall.bybit import Bybit
+from onecall.ftx import FTX
+from onecall.ftx_us import FTXUS
 
 exchanges = [
     "Biance",

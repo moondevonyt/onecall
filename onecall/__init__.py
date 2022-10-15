@@ -7,10 +7,21 @@ from ftx import FTX
 from ftx_us import FTXUS
 
 exchanges = [
-    'Biance',
+    "Biance",
     'Phemex',
     'Kucoin',
     'Bybit',
     'FTX',
     'Binance_spot',
+]
+
+__all__ = [
+    Binance,
+    BinanceSpot,
+    Phemex,
+    Kucoin,
+    Bybit,
+    FTX,
+    FTXUS,
+    exchanges,
 ]

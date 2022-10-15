@@ -1,5 +1,5 @@
-from ftx import FTX
-from base import urls
+from onecall.ftx import FTX
+from onecall.base import urls
 
 
 class FTXUS(FTX):

@@ -8,9 +8,9 @@ import pandas as pd
 import requests
 from urllib.parse import urlencode
 
-from base import utils
-from base.exchange import Exchange
-from base import urls
+from onecall.base import utils
+from onecall.base.exchange import Exchange
+from onecall.base import urls
 
 
 class FTX(Exchange):

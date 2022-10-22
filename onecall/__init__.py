@@ -1,3 +1,5 @@
+from onecall.base.exchange import Exchange
+
 from onecall.binance import Binance as binance
 from onecall.binance_spot import BinanceSpot as binancespot
 from onecall.phemex import Phemex as phemex

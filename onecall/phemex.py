@@ -457,7 +457,7 @@ class Phemex(Exchange):
 
     def _signed_request(self, method, path, params=None, data=None):
         expiry = utils.get_current_timestamp() + 1
-        query_params = urlencode(params) if params else None
+        query_params = '&'.join(['{}={}'.format(k, v) for k, v in params.items()]) if params else None
         if data:
             data = json.dumps(data, separators=(',', ':')) if data else None
         header = self._get_request_credentials(path, expiry, params=query_params, payload=data)

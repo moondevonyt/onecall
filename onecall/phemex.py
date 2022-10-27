@@ -58,7 +58,7 @@ class Phemex(Exchange):
             "cancel_orders": {"method": "DELETE", "path": "/orders/all", "rate_limit": 50},
             "get_data": {"method": "GET", "path": "/exchange/public/md/v2/kline", "rate_limit": 50},
             "get_orderbook": {"method": "GET", "path": "/md/orderbook", "rate_limit": 50},
-            "get_balance": {"method": "GET", "path": "accounts/accountPositions", "rate_limit": 50},
+            "get_balance": {"method": "GET", "path": "/accounts/accountPositions", "rate_limit": 50},
             "market_order": {"method": "POST", "path": "/orders", "rate_limit": 50},
             "limit_order": {"method": "POST", "path": "/orders", "rate_limit": 50},
             "get_closed_orders": {"method": "GET", "path": "/exchange/order/list", "rate_limit": 50},

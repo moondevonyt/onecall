@@ -240,7 +240,12 @@ class Phemex(Exchange):
                                         self._path_config.get("get_balance").get("path"),
                                         params)
         if response.get("data"):
-            return response.get("data", {}).get("account")
+            balance = response.get("data", {}).get("account")
+            if currency == 'USD':
+                balance["balance"] = balance.get("accountBalanceEv", 0) / 10000
+            elif currency.upper() == 'BTC':
+                balance["balance"] = balance.get("accountBalanceEv", 0) / 100000000
+            return balance
         return response
 
     def market_order(self, symbol: str, side: str, order_qty: float, **kwargs):

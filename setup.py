@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-VERSION = '1.0.9'
+VERSION = '1.0.10'
 DESCRIPTION = "An algorithmic trading python package to save thousands of hours with the quickest crypto trading library so you can easily algo trade on any exchange & execute with unified function calls"
 LONG_DESCRIPTION = "the onecall trading bot python library saves you thousands of hours to connect and trade with cryptocurrency exchanges. Taking out all of the hard work of connected to many exchanges and figuring out their documentation. with onecall you simply connect to one call and all of the functions for each exchange are the same so you save time and don't have to read new docs. onecall has a ton of custom algo trading functions built in saving you thousands of hours of time"
 

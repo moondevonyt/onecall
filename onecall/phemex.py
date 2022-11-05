@@ -361,7 +361,7 @@ class Phemex(Exchange):
             "side": side,
             "ordType": "Limit",
             "orderQty": order_qty,
-            "priceEp": price,
+            "priceEp": price*10000,
             **kwargs
         }
         response = self._signed_request(self._path_config.get("limit_order").get("method"),

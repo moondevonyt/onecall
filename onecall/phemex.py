@@ -131,10 +131,15 @@ class Phemex(Exchange):
             "symbol": symbol,
             "untriggered": True,
         }
-        response = self._signed_request(self._path_config.get("cancel_orders").get("method"),
-                                        self._path_config.get("cancel_orders").get("path"),
-                                        params)
-        return response
+        conditional_response = self._signed_request(self._path_config.get("cancel_orders").get("method"),
+                                                    self._path_config.get("cancel_orders").get("path"),
+                                                    params)
+        params["untriggered"] = False
+        active_response = self._signed_request(self._path_config.get("cancel_orders").get("method"),
+                                               self._path_config.get("cancel_orders").get("path"),
+                                               params)
+
+        return {"conditional_orders": conditional_response, "active_orders": active_response}
 
     def get_data(self, symbol: str, interval: int, **kwargs):
         """

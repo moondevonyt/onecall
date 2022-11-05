@@ -172,7 +172,24 @@ class Phemex(Exchange):
         if kwargs.get("is_dataframe", None):
             try:
                 columns = ["timestamp", "interval", "last_close", "open", "high", "low", "close", "volume", "turnover"]
-                return pd.DataFrame(response["data"]["rows"], columns=columns)
+                df = pd.DataFrame(response["data"]["rows"], columns=columns)
+                df["last_close"] = df["last_close"]/10000
+                df["open"] = df["open"] / 10000
+                df["high"] = df["high"] / 10000
+                df["low"] = df["low"] / 10000
+                df["close"] = df["close"] / 10000
+                return df
+            except Exception as e:
+                self._logger.error(e)
+        elif response.get("data", {}).get("rows"):
+            try:
+                for idx, data in enumerate(response.get("data", {}).get("rows")):
+                    response.get("data", {}).get("rows")[idx][2] = response.get("data", {}).get("rows")[idx][2] / 10000
+                    response.get("data", {}).get("rows")[idx][3] = response.get("data", {}).get("rows")[idx][3] / 10000
+                    response.get("data", {}).get("rows")[idx][4] = response.get("data", {}).get("rows")[idx][4] / 10000
+                    response.get("data", {}).get("rows")[idx][5] = response.get("data", {}).get("rows")[idx][5] / 10000
+                    response.get("data", {}).get("rows")[idx][6] = response.get("data", {}).get("rows")[idx][6] / 10000
+                return response
             except Exception as e:
                 self._logger.error(e)
         return response

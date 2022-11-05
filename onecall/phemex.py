@@ -223,7 +223,7 @@ class Phemex(Exchange):
         response = self._signed_request(self._path_config.get("get_orderbook").get("method"),
                                         self._path_config.get("get_orderbook").get("path"),
                                         params)
-        if is_dataframe and response.get("result"):
+        if is_dataframe:
             try:
                 columns = ['price', 'QTY']
                 bid = pd.DataFrame(response["result"]["book"]["bids"], columns=columns)
@@ -231,9 +231,18 @@ class Phemex(Exchange):
                 ask = pd.DataFrame(response["result"]["book"]["asks"], columns=columns)
                 ask["type"] = ["ask" for i in range(0, ask.shape[0])]
                 df = pd.concat([bid, ask], ignore_index=True)
+                df["price"] = df["price"] / 10000
                 return df
             except Exception as e:
                 logging.error(e)
+        elif response.get("result"):
+            try:
+                for idx, data in enumerate(response["result"]["book"]["bids"]):
+                    response["result"]["book"]["bids"][idx][0] = response["result"]["book"]["bids"][idx][0] / 10000
+                for idx, data in enumerate(response["result"]["book"]["asks"]):
+                    response["result"]["book"]["asks"][idx][0] = response["result"]["book"]["asks"][idx][0] / 10000
+            except Exception as e:
+                self._logger.error(e)
         return response
 
     def get_balance(self, currency="USD"):
